@@ -18,19 +18,21 @@ class TFIDF(Retriever):
         """
         Remove unwanted charatcters from text and lowercase
         """
-        raise NotImplementedError()
+        text=text.lower()
+        return text.split()
         
     def GetQueryVocabulary(self, query: str) -> list[str]:
         """
         Returns all unique words in a query
         """
-        raise NotImplementedError()
+        return list(set(self.PreprocessText(query)))
 
     def GetDocumentVocabulary(self, document: Document) -> list[str]:
         """
         Returns all unique words in a document
         """
-        raise NotImplementedError()
+        text=document.GetText()
+        return self.GetQueryVocabulary(text)
     
     def GetCorpusVocabulary(self) -> set[str]:
         """
