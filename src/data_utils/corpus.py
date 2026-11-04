@@ -41,16 +41,21 @@ class Corpus:
 
     @property
     def all_documents(self):
-        train_text, train_ids = list(self.train['text']), list(self.train['document_id'])
-        val_text, val_ids =     list(self.val['text']), list(self.val['document_id'])
-        
-        all_text = train_text + val_text
-        all_ids = train_ids   + val_ids
-
+        splits = [self.train, self.val]
         if self.test is not None:
-            test_text, test_ids = list(self.test['text']), list(self.test['document_id'])
-            all_text += test_text
-            all_ids  += test_ids
+            splits.append(self.test)
+
+        all_text = []
+        all_ids = []
+        seen_ids = set()
+
+        for split in splits:
+            for text_list, id_list in zip(split['text'], split['document_id']):
+                for doc_text, doc_id in zip(text_list, id_list):
+                    if doc_id not in seen_ids:
+                        seen_ids.add(doc_id)
+                        all_text.append([doc_text])
+                        all_ids.append([doc_id])
 
         return Dataset.from_dict({'text': all_text,
                                   'document_id': all_ids})
@@ -74,27 +79,35 @@ class Corpus:
         
         for key in self.ds:
             self.ds[key] = self.ds[key].rename_column(column_mapping[self.dataset_name], 'text')
+            if self.dataset_name == 'squad':
+                self.ds[key] = self.ds[key].map(lambda row: {'text': [row['text']]})
         return self.ds
 
     def __assign_ids(self):
         q_id_counter = 0
         doc_id_counter = 0
+        doc_text_to_id = {}
         relevant_document_ids = {}
 
         for key in self.ds:
             query_ids = []
             document_ids = []
-            for i in range(len(self.ds[key])):
-                query_ids.append(f'q{q_id_counter}')
-                documents = self.ds[key]['text'][i]
+            texts = self.ds[key]['text']
+            for documents in texts:
+                q_id = f'q{q_id_counter}'
+                query_ids.append(q_id)
                 relevant_ids = []
                 for doc in documents:
-                    relevant_ids.append(f'doc{doc_id_counter}')
-                    doc_id_counter += 1
+                    if doc not in doc_text_to_id:
+                        doc_id = f'doc{doc_id_counter}'
+                        doc_text_to_id[doc] = doc_id
+                        doc_id_counter += 1
+                    else:
+                        doc_id = doc_text_to_id[doc]
+                    relevant_ids.append(doc_id)
                 
                 document_ids.append(relevant_ids)
-                
-                relevant_document_ids[f'q{q_id_counter}'] = relevant_ids
+                relevant_document_ids[q_id] = list(dict.fromkeys(relevant_ids))
                 q_id_counter += 1
                 
             self.ds[key] = self.ds[key].add_column('query_id', query_ids)

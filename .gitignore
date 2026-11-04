@@ -221,4 +221,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Misc
+project_roadmap.md
+02456-2026-project-4-retrieval.pdf
 .vscode/
