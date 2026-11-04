@@ -5,6 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "02456_retrieval_project"
 version = "0.0.1"
+dynamic = ["dependencies"]
 
 description = "Codebase for graph algorithms."
 readme = "README.md"
