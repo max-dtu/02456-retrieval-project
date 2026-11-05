@@ -1,6 +1,5 @@
 from src.data_utils.document import Document
 
-
 class Query:
     def __init__(self, text: str, id: str, relevant_document_ids: list[str], label: str = None) -> None:
         self.text = text
