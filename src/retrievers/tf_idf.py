@@ -86,12 +86,14 @@ class TFIDF(Retriever):
         tfidf_matrix = lil_matrix((n_documents, n_terms), dtype=np.float32)
         for i, document in enumerate(documents) :
             tc=self.GetDocumentTermCounts(document)
+            if not tc:
+                continue
             max_freq=max(tc.values())
             for term, count in tc.items():
                 if term in self.term_to_index :
                     j=self.term_to_index[term]
                     tf=count/max_freq
-                    idf=self.idf[term]
+                    idf=self.idf.get(term,0)
                     tfidf_matrix[i,j]=tf*idf
         return tfidf_matrix.tocsr()   # Convert to CSR format for efficient row slicing
     
@@ -105,9 +107,15 @@ class TFIDF(Retriever):
             csr_matrix: A sparse vector representation of the query
         """
         query_vector = lil_matrix((len(queries), len(self.corpus_vocabulary)), dtype=np.float32)
-
-        # TODO: add code
-
+        for k, query in enumerate(queries):
+            words=self.PreprocessText(query)
+            tc = {}
+            for word in words :
+                tc[word]=tc.get(word,0)+1
+            for term, count in tc.items():
+                if term in self.term_to_index:
+                    j=self.term_to_index[term]
+                    query_vector[k,j] = count
         return query_vector.tocsr()
 
     #@time_func
