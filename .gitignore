@@ -226,3 +226,6 @@ __marimo__/
 project_roadmap.md
 02456-2026-project-4-retrieval.pdf
 .vscode/
+# embeddings / checkpoints
+*.pt
+glove*

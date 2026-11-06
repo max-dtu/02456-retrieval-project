@@ -5,6 +5,7 @@ from src.retrievers.bm25 import BM25
 from src.data_utils.query import Query
 from src.retrievers.utils import retrieveQueryAndGetRelevancies
 from src.evaluation.metrics import Evaluate
+from src.retrievers.models.encoder import train as train_encoder
 
 @hydra.main(config_path='config', config_name='fiqa_experiment.yaml', version_base=None)
 def main(cfg):
@@ -26,7 +27,11 @@ def main(cfg):
             Query(q_text, id=q_id, relevant_document_ids=corpus.relevant_ids[q_id])
             for q_text, q_id in zip(corpus.test['question'], corpus.test['query_id'])
         ]
+    ### transformer base run
+    train_encoder(cfg, corpus)
+
     
+
     ### Initialize Retriever class
     if hasattr(cfg, 'retriever') and cfg.retriever.method == "bm25":
         k1 = cfg.retriever.get("k1", 1.5)
