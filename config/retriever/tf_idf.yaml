@@ -1,1 +1,1 @@
-method: "td-idf"
+method: "tf_idf"
