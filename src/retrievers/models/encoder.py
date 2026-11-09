@@ -19,6 +19,10 @@ from src.data_utils.corpus import Corpus
 from src.data_utils.query import Query
 from src.data_utils.dataset import QueryDocsDataset
 
+from src.training.trainer import Trainer
+from src.training.loss import DPRLoss
+
+
 TOKENIZER = transformers.AutoTokenizer.from_pretrained("bert-base-uncased")
 VOCAB_SIZE = TOKENIZER.vocab_size
 
@@ -36,9 +40,9 @@ class Encoder1Block(nn.Module):
     
     def forward(self, x, mask):
         atten = self.multihead(x,x,x,mask)
-        x = x + self.dropout((self.norm1(atten)))
+        x = self.norm1(x + self.dropout(atten))
         ff = self.linear(x)
-        x = x + self.dropout(self.norm2(ff))
+        x = self.norm2(x + self.dropout(ff))
         return x
 
     
@@ -88,11 +92,13 @@ class TransformerEncoder(nn.Module):
             return x[:,0,:]
         
         elif self.cfg.model.pooling_type == 'max':
-            raise NotImplementedError()
+            mask = mask.unsqueeze(-1)
+            x_masked = x.masked_fill(mask == 0, -inf)
+            return x_masked.max(dim=1).values
         
         elif self.cfg.model.pooling_type == 'mean':
             mask = mask.unsqueeze(-1)
-            return (x * mask).sum(dim=1) / mask.sum(dim=1)
+            return (x * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1e-9)
 
 
 
@@ -161,10 +167,7 @@ class MultiHeadedAttention(nn.Module):
 
 
 def loss_encoding(query_encoded, docs_encoded):
-    num_matrix = (docs_encoded @ query_encoded.T)
-    return -(num_matrix.diag() - torch.logsumexp(num_matrix, dim=1)).mean()
-    
-
+    return DPRLoss()(query_encoded, docs_encoded)
 
 
 def collate_docs(batch):
@@ -191,38 +194,10 @@ def collate_docs(batch):
 
 def train(cfg, corpus=None):
     """Train the query/doc encoders. Callable from main.py (pass its corpus to avoid reloading)."""
-    if corpus is None:
-        corpus = Corpus(dataset_name=cfg.dataset.name, base_dir=f'{cfg.base_path}/retrieval_data')
-
-    batch_size = cfg.model.batch_size
-    train_dataloader= DataLoader(QueryDocsDataset(corpus, "train"), batch_size = batch_size, shuffle = True, collate_fn=collate_docs)
-    val_dataloader = DataLoader(QueryDocsDataset(corpus, "val"), batch_size = batch_size, shuffle = True, collate_fn=collate_docs)
-    test_dataloader = DataLoader(QueryDocsDataset(corpus, "test"), batch_size = batch_size, shuffle = True, collate_fn=collate_docs)
-
-
     q_Encoder = TransformerEncoder(cfg)
     d_Encoder = TransformerEncoder(cfg)
-
-    all_params = chain(q_Encoder.parameters(), d_Encoder.parameters())
-
-    optimizer = optim.Adam(all_params, lr=0.0001, weight_decay = 0.00005)
-
-    for epoch in range(cfg.model.epochs):
-        i = 0
-        for queries, docs in tqdm(train_dataloader):
-            optimizer.zero_grad()
-
-            queries_latent = q_Encoder(queries['input_ids'], queries['attention_mask'])
-
-            docs_latent = d_Encoder(docs['input_ids'], docs['attention_mask'])
-
-            batch_loss = loss_encoding(queries_latent, docs_latent)
-            batch_loss.backward()
-            optimizer.step()
-            if i % 100 ==0:
-                print(batch_loss)
-            i += 1
-        print(batch_loss)
+    trainer = Trainer(cfg)
+    return trainer.train(q_Encoder, d_Encoder, corpus=corpus, collate_fn=collate_docs)
 
 
 @hydra.main(config_path='../../../config', config_name='fiqa_experiment.yaml', version_base=None)
