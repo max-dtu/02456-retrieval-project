@@ -2,7 +2,7 @@ from src.data_utils.document import Document
 from src.retrievers.base_retriever import Retriever
 import numpy as np
 from scipy.sparse import lil_matrix
-
+import re
 
 class TFIDF(Retriever):
     def __init__(self, documents: list[dict] = None, index_path: str = None) -> None:
@@ -17,8 +17,8 @@ class TFIDF(Retriever):
         """
         Remove unwanted charatcters from text and lowercase
         """
-        text=text.lower()
-        return text.split()
+        return re.findall(r"\b[\w']+\b", text.lower())
+
         
     def GetQueryVocabulary(self, query: str) -> list[str]:
         """
