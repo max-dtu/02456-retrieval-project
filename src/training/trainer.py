@@ -68,7 +68,7 @@ class Trainer:
 
         lr = self.cfg.model.get("lr", 1e-4)
         weight_decay = self.cfg.model.get("weight_decay", 5e-5)
-        all_params = chain(query_encoder.parameters(), document_encoder.parameters())
+        all_params = nn.ModuleList([query_encoder, document_encoder]).parameters()
         optimizer = optim.Adam(all_params, lr=lr, weight_decay=weight_decay)
 
         epochs = self.cfg.model.epochs

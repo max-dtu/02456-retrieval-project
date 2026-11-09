@@ -196,6 +196,7 @@ def train(cfg, corpus=None):
     """Train the query/doc encoders. Callable from main.py (pass its corpus to avoid reloading)."""
     q_Encoder = TransformerEncoder(cfg)
     d_Encoder = TransformerEncoder(cfg)
+    d_Encoder.embed = q_Encoder.embed
     trainer = Trainer(cfg)
     return trainer.train(q_Encoder, d_Encoder, corpus=corpus, collate_fn=collate_docs)
 
