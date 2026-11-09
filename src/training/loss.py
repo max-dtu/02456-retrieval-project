@@ -11,8 +11,12 @@ class DPRLoss(nn.Module):
         @param queries: batch_size x embedding_dim
         @param documents: batch_size x embedding_dim
 
-        Computes cross entropy between the query 
+        Computes in-batch negative log-likelihood loss contrasting each query Q_i
+        against all documents D_j in the batch:
+            -log( exp(D_i^T Q_i) / sum_j exp(D_j^T Q_i) )
 
-        Returns: A 1d torch tensor 
+        Returns: A scalar torch tensor
         """
-        raise NotImplementedError()
+        # Row i corresponds to query Q_i, column j corresponds to document D_j
+        scores = queries @ documents.T
+        return -(scores.diag() - torch.logsumexp(scores, dim=1)).mean()
