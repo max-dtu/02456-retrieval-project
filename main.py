@@ -70,9 +70,9 @@ def main(cfg):
     if corpus.test is not None:
         print(f'Test results: {test_scores}')
 
-
-    plot_attention_maps(retriever.query_encoder, train_queries[0].text, layers_idx=[0,3,-1])
-    plot_attention_maps(retriever.query_encoder, train_queries[1].text, layers_idx=[0,3,-1])
+    if not cfg.model.pretrained: #dont plot for BERT
+        plot_attention_maps(retriever.query_encoder, train_queries[0].text, layers_idx=[0,3,-1])
+        plot_attention_maps(retriever.query_encoder, train_queries[1].text, layers_idx=[0,3,-1])
 
 if __name__ == '__main__':
     main()

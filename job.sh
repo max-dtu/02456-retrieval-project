@@ -14,7 +14,22 @@
 # ENVIRONMENT
 # --------------------------------------------------
 module load python3/3.12.11          # check name with: module avail python3
-source ~/venvs/dpr/bin/activate
+# Use $VENV if set, otherwise ./.venv in the project, otherwise ~/venvs/dpr
+FOUND=""
+for cand in "$VENV" "$PWD/.venv" "$HOME/venvs/dpr"; do
+    if [ -n "$cand" ] && [ -f "$cand/bin/activate" ]; then
+        source "$cand/bin/activate"; FOUND="$cand"; break
+    fi
+done
+if [ -z "$FOUND" ]; then
+    echo "ERROR: no Python environment found (tried \$VENV, $PWD/.venv, $HOME/venvs/dpr)"
+    exit 1
+fi
+echo "Python env:   $FOUND ($(which python))"
+python -c "import hydra, torch, transformers, datasets" || {
+    echo "ERROR: environment $FOUND is missing dependencies - run pip install -r requirements.txt in it"
+    exit 1
+}
 export PYTHONPATH="$PWD:$PYTHONPATH"
 export HF_HUB_OFFLINE=1              
 
@@ -35,6 +50,7 @@ nvidia-smi
 # --------------------------------------------------
 python main.py \
     device=cuda \
+    model=bert \ ### change this one if you dont want to run bert
     model.pooling_type="$POOL" \
     model.emb_dim="$EMB" \
     model.hidden_dim="$HID" \

@@ -5,7 +5,7 @@ defaults:
   - model: encoder
 
 
-device: cuda
+device: mps
 base_path: "."
 top_k: 10
 
