@@ -1,6 +1,9 @@
 #!/bin/bash
-# Submit one GPU job per hyperparameter combination. Run from the project root:
-#   bash submit_all.sh
+
+#BSUB -J submit_all
+#BSUB -q hpc
+#BSUB -W 00:10
+#BSUB -o results/submit_all_%J.out
 
 # --------------------------------------------------
 # PARAMETERS
@@ -12,9 +15,9 @@ FF_VALUES=(1024)
 BS_VALUES=(64)
 EPOCH_VALUES=(10)
 
-RUN_ID="$(date +%Y-%m-%d_%H%M)"
-LOG_DIR="results/${RUN_ID}/logs"
-mkdir -p "$LOG_DIR"
+RUN_ID="$(date +%Y-%m-%d_%H%M%S)"
+BATCH_DIR="results/${RUN_ID}"
+mkdir -p "$BATCH_DIR"
 
 echo "Experiment batch: $RUN_ID"
 TOTAL=0
@@ -27,12 +30,14 @@ for bs in "${BS_VALUES[@]}"; do
 for ep in "${EPOCH_VALUES[@]}"; do
 
     NAME="pool${pool}_emb${emb}_hid${hid}_ff${ff}_bs${bs}_ep${ep}"
+    RUN_DIR="${BATCH_DIR}/${NAME}"
+    mkdir -p "$RUN_DIR"
     echo "Submitting: $NAME"
 
     bsub \
         -J "dpr_${pool}" \
-        -oo "${LOG_DIR}/${NAME}.out" \
-        -eo "${LOG_DIR}/${NAME}.err" \
+        -oo "${RUN_DIR}/stdout.out" \
+        -eo "${RUN_DIR}/stderr.err" \
         -env "all,POOL=$pool,EMB=$emb,HID=$hid,FF=$ff,BS=$bs,EPOCHS=$ep,RUN_ID=$RUN_ID" \
         < job.sh
 
@@ -41,4 +46,5 @@ for ep in "${EPOCH_VALUES[@]}"; do
 done; done; done; done; done; done
 
 echo ""
-echo "Submitted $TOTAL jobs. Logs: $LOG_DIR/  (check status with: bstat)"
+echo "Submitted $TOTAL jobs into $BATCH_DIR/  (check status with: bstat)"
+echo "When done, summarize with: python summarize_results.py $BATCH_DIR"

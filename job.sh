@@ -4,7 +4,7 @@
 # LSF CONFIGURATION  (one DPR training + evaluation run on one GPU)
 # --------------------------------------------------
 #BSUB -q gpuv100
-#BSUB -W 02:00
+#BSUB -W 12:00
 #BSUB -n 4
 #BSUB -R "span[hosts=1]"
 #BSUB -R "rusage[mem=4GB]"
@@ -35,6 +35,7 @@ nvidia-smi
 # --------------------------------------------------
 python main.py \
     device=cuda \
+    dataset=squad \
     model.pooling_type="$POOL" \
     model.emb_dim="$EMB" \
     model.hidden_dim="$HID" \

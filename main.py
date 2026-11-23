@@ -1,5 +1,7 @@
 import os
+import json
 import hydra
+from hydra.core.hydra_config import HydraConfig
 from src.data_utils.corpus import Corpus
 from src.retrievers.tf_idf import TFIDF
 from src.retrievers.bm25 import BM25
@@ -71,8 +73,19 @@ def main(cfg):
         print(f'Test results: {test_scores}')
 
 
-    plot_attention_maps(retriever.query_encoder, train_queries[0].text, layers_idx=[0,3,-1])
-    plot_attention_maps(retriever.query_encoder, train_queries[1].text, layers_idx=[0,3,-1])
+    out_dir = HydraConfig.get().runtime.output_dir
+    metrics = {'train': train_scores, 'val': val_scores}
+    if corpus.test is not None:
+        metrics['test'] = test_scores
+    metrics_path = os.path.join(out_dir, 'metrics.json')
+    with open(metrics_path, 'w') as f:
+        json.dump(metrics, f, indent=2)
+    print(f'Saved metrics to {metrics_path}')
+
+    if method == "dpr":
+        plot_prefix = os.path.join(out_dir, 'plots', 'attention_maps')
+        plot_attention_maps(retriever.query_encoder, train_queries[0].text, save_path=plot_prefix, layers_idx=[0,3,-1])
+        plot_attention_maps(retriever.query_encoder, train_queries[1].text, save_path=plot_prefix, layers_idx=[0,3,-1])
 
 if __name__ == '__main__':
     main()

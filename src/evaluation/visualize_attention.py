@@ -51,6 +51,6 @@ def plot_attention_maps(
 
     plt.tight_layout()
     os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
-    plt.savefig(f"outputs/plots/{save_path}_avghead_layers{layers_idx}_q{text[0]}.png", dpi=150)
+    plt.savefig(f"{save_path}_avghead_layers{layers_idx}_q{text[0]}.png", dpi=150)
     plt.close(fig)
     return save_path

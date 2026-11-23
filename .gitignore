@@ -231,3 +231,8 @@ checkpoints/*
 *.pt
 glove*
 uv.lock
+
+
+*.out
+*.err
+results/*
