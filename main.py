@@ -72,7 +72,7 @@ def main(cfg):
     if corpus.test is not None:
         print(f'Test results: {test_scores}')
 
-
+    ### Save metrics to the run's output directory
     out_dir = HydraConfig.get().runtime.output_dir
     metrics = {'train': train_scores, 'val': val_scores}
     if corpus.test is not None:
@@ -82,7 +82,7 @@ def main(cfg):
         json.dump(metrics, f, indent=2)
     print(f'Saved metrics to {metrics_path}')
 
-    if method == "dpr":
+    if method == "dpr" and not cfg.model.get("pretrained", False):  # no attention plots for BERT / non-DPR
         plot_prefix = os.path.join(out_dir, 'plots', 'attention_maps')
         plot_attention_maps(retriever.query_encoder, train_queries[0].text, save_path=plot_prefix, layers_idx=[0,3,-1])
         plot_attention_maps(retriever.query_encoder, train_queries[1].text, save_path=plot_prefix, layers_idx=[0,3,-1])

@@ -5,7 +5,7 @@ import torch.nn as nn
 from tqdm import tqdm
 
 from src.retrievers.base_retriever import Retriever
-from src.retrievers.models.encoder import TransformerEncoder, TOKENIZER
+from src.retrievers.models.encoder import TransformerEncoder, TOKENIZER, BertEncoder
 from src.training.trainer import resolve_device
 
 
@@ -37,8 +37,12 @@ class DPR(Retriever):
         self.doc_embeddings = self.EncodeDocuments()
 
     def __load_models(self):
-        self.query_encoder = TransformerEncoder(self.cfg)
-        self.document_encoder = TransformerEncoder(self.cfg)
+        if cfg.model.pretrained:
+            self.query_encoder = BertEncoder(self.cfg)
+            self.document_encoder = BertEncoder(self.cfg)
+        else:
+            self.query_encoder = TransformerEncoder(self.cfg)
+            self.document_encoder = TransformerEncoder(self.cfg)
 
         default_dir = os.path.join(self.cfg.get("base_path", "."), "checkpoints")
         dataset_name = self.cfg.dataset.name

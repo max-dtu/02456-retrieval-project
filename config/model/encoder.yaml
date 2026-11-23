@@ -1,3 +1,4 @@
+pretrained: False
 pooling_type: 'mean' # mean | cls | max
 emb_dim: 256
 hidden_dim: 128

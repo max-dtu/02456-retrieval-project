@@ -26,6 +26,38 @@ from src.training.loss import DPRLoss
 TOKENIZER = transformers.AutoTokenizer.from_pretrained("bert-base-uncased")
 VOCAB_SIZE = TOKENIZER.vocab_size
 
+class BertEncoder(nn.Module):
+    def __init__(self, cfg):
+        super().__init__()
+        self.cfg = cfg
+        self.bert = transformers.AutoModel.from_pretrained(cfg.model.model_name)
+
+    def forward(self, x, mask):
+        out = self.bert(input_ids=x, attention_mask=mask)
+        x = out.last_hidden_state     
+        x = self.pool(self, x, mask)
+
+        return x        
+    
+    def pool(self, x, mask):
+        """
+        Given a batch_size x sequence_length x emb_dim tensor, pool the input along the sequence_length dimension 
+        Returns: A pooled vector of shape batch_size x emb_dim
+        """
+        if self.cfg.model.pooling_type == 'cls':
+            return x[:,0,:]
+        
+        elif self.cfg.model.pooling_type == 'max':
+            mask = mask.unsqueeze(-1)
+            x_masked = x.masked_fill(mask == 0, -inf)
+            return x_masked.max(dim=1).values
+        
+        elif self.cfg.model.pooling_type == 'mean':
+            mask = mask.unsqueeze(-1)
+            return (x * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1e-9)
+
+
+
 class Encoder1Block(nn.Module):
     def __init__(self, emb_dim, n_heads, feed_forward_dim, dropout = 0.1):
         super().__init__()
@@ -194,9 +226,13 @@ def collate_docs(batch):
 
 def train(cfg, corpus=None):
     """Train the query/doc encoders. Callable from main.py (pass its corpus to avoid reloading)."""
-    q_Encoder = TransformerEncoder(cfg)
-    d_Encoder = TransformerEncoder(cfg)
-    d_Encoder.embed = q_Encoder.embed
+    if cfg.model.pretrained:
+        q_Encoder = BertEncoder(cfg)
+        d_Encoder = BertEncoder(cfg)
+    else:
+        q_Encoder = TransformerEncoder(cfg)
+        d_Encoder = TransformerEncoder(cfg)
+        d_Encoder.embed = q_Encoder.embed
     trainer = Trainer(cfg)
     return trainer.train(q_Encoder, d_Encoder, corpus=corpus, collate_fn=collate_docs)
 

@@ -1,0 +1,7 @@
+pretrained: True
+model_name: bert-base-uncased
+pooling_type: 'mean'
+epochs: 3
+batch_size: 64
+lr: 2.0e-5
+max_length: 128
