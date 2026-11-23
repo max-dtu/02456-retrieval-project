@@ -1,1 +1,3 @@
 method: "dpr"
+query_encoder_weights_path: "checkpoints/fiqa_mean_query_encoder.pt"
+document_encoder_weights_path: "checkpoints/fiqa_mean_document_encoder.pt"

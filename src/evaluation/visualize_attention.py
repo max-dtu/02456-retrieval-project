@@ -1,15 +1,15 @@
 import os
 import torch
+import numpy as np
 import matplotlib.pyplot as plt
 from src.retrievers.models.encoder import TransformerEncoder, TOKENIZER
-
 
 @torch.no_grad()
 def plot_attention_maps(
     encoder: TransformerEncoder,
     text: str,
-    save_path: str = "outputs/attention_maps.png",
-    layer_idx: int = -1,
+    save_path: str = "attention_maps",
+    layers_idx: list[int] = [0],
     max_tokens: int = 32,
 ):
     """
@@ -32,15 +32,17 @@ def plot_attention_maps(
     _ = encoder(input_ids, attention_mask)
 
     # attn shape: (batch_size=1, n_heads, seq_len, seq_len)
-    attn = encoder.layers[layer_idx].multihead.attn[0].detach().cpu().numpy()
+    attn_layers = [np.mean(encoder.layers[l].multihead.attn[0].detach().cpu().numpy(), axis = 0) for l in layers_idx] #mean across all the heads
     token_labels = TOKENIZER.convert_ids_to_tokens(input_ids[0].cpu().tolist())
-    n_heads = attn.shape[0]
-
-    fig, axes = plt.subplots(1, n_heads, figsize=(4.5 * n_heads, 4.5), squeeze=False)
-    for h in range(n_heads):
-        ax = axes[0, h]
-        im = ax.imshow(attn[h], cmap="viridis", aspect="auto")
-        ax.set_title(f"Layer {layer_idx % len(encoder.layers)} - Head {h}")
+    n_plots = len(layers_idx)
+    fig, axes = plt.subplots(1, n_plots, figsize=(4.5 * n_plots, 4.5), squeeze=False)
+    
+    for l in range(n_plots):
+        layer_number = layers_idx[l] % len(encoder.layers)
+        ax = axes[0, l]
+        im = ax.imshow(attn_layers[l], cmap="viridis", aspect="auto")
+        
+        ax.set_title(f"Layer {layer_number}")
         ax.set_xticks(range(len(token_labels)))
         ax.set_yticks(range(len(token_labels)))
         ax.set_xticklabels(token_labels, rotation=90, fontsize=8)
@@ -49,7 +51,6 @@ def plot_attention_maps(
 
     plt.tight_layout()
     os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
-    plt.savefig(save_path, dpi=150)
+    plt.savefig(f"outputs/plots/{save_path}_avghead_layers{layers_idx}_q{text[0]}.png", dpi=150)
     plt.close(fig)
     return save_path
-

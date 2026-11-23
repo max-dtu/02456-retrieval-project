@@ -230,3 +230,4 @@ project_roadmap.md
 checkpoints/*
 *.pt
 glove*
+uv.lock

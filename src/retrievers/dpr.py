@@ -44,10 +44,10 @@ class DPR(Retriever):
         dataset_name = self.cfg.dataset.name
         pooling_type = self.cfg.model.pooling_type
 
-        query_weights_path = self.cfg.model.get("query_encoder_weights_path", None) or os.path.join(
+        query_weights_path = self.cfg.retriever.get("query_encoder_weights_path", None) or os.path.join(
             default_dir, f"{dataset_name}_{pooling_type}_query_encoder.pt"
         )
-        document_weights_path = self.cfg.model.get("document_encoder_weights_path", None) or os.path.join(
+        document_weights_path = self.cfg.retriever.get("document_encoder_weights_path", None) or os.path.join(
             default_dir, f"{dataset_name}_{pooling_type}_document_encoder.pt"
         )
 

@@ -4,3 +4,4 @@ torch
 datasets
 scipy
 tokenizers
+matplotlib

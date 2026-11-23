@@ -1,8 +1,8 @@
 pooling_type: 'mean' # mean | cls | max
-emb_dim: 128
-hidden_dim: 32
+emb_dim: 256
+hidden_dim: 128
 n_heads: 4
 n_layers: 6
-feed_forward_dim: 768
-epochs: 1
-batch_size: 16
+feed_forward_dim: 1024
+epochs: 10
+batch_size: 64
